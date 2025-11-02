@@ -18,51 +18,16 @@ function App() {
   }, []);
 
   const generateReplies = useCallback(async (payload) => {
-    if (!payload?.apiKey) {
-      setError('Please enter your OpenAI API key.');
-      return;
-    }
     setLoading(true);
     setError('');
     setSuggestions([]);
 
     try {
-      const systemPrompt = "You are an assistant that crafts concise, natural-sounding chat replies. Always return a compact JSON object with a `suggestions` array of exactly two short strings. Keep them under 25 words each, casual and context-aware.";
-
-      const userSummary = `Here is the input content.\nTone: ${payload.tone}.\nPersonal note: ${payload.note || 'N/A'}.\nIf an image is provided, analyze it for chat context and extract any text you can read.\nReturn JSON strictly as {\"suggestions\":[\"...\",\"...\"]}.`;
-
-      const content = [
-        { type: 'text', text: userSummary },
-      ];
-
-      if (payload.mode === 'text' && payload.text) {
-        content.push({ type: 'text', text: `User text: ${payload.text}` });
-      }
-
-      if ((payload.mode === 'image' || payload.mode === 'camera') && payload.imageDataUrl) {
-        content.push({
-          type: 'image_url',
-          image_url: {
-            url: payload.imageDataUrl,
-          },
-        });
-      }
-
-      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      const base = import.meta.env.VITE_BACKEND_URL || '';
+      const resp = await fetch(`${base}/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${payload.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content },
-          ],
-          max_tokens: 200,
-          temperature: 0.8,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
@@ -71,31 +36,10 @@ function App() {
       }
 
       const data = await resp.json();
-      const message = data?.choices?.[0]?.message?.content || '';
-
-      // Try to parse JSON block from the model
-      let parsed = null;
-      try {
-        const jsonMatch = message.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-        }
-      } catch {
-        parsed = null;
-      }
-
-      const out = Array.isArray(parsed?.suggestions)
-        ? parsed.suggestions.slice(0, 2)
-        : message
-            .split(/\n|\r/)
-            .map((l) => l.replace(/^\d+\.|^-\s*/, '').trim())
-            .filter(Boolean)
-            .slice(0, 2);
-
+      const out = Array.isArray(data?.suggestions) ? data.suggestions.slice(0, 2) : [];
       if (out.length < 2) {
-        throw new Error('Could not parse two suggestions from the AI response.');
+        throw new Error('The server did not return two suggestions.');
       }
-
       setSuggestions(out);
     } catch (e) {
       console.error(e);

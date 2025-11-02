@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, Image as ImageIcon, FileText, KeyRound, Play } from 'lucide-react';
+import { Camera, Image as ImageIcon, FileText, Play } from 'lucide-react';
 
 const TONES = ['Flirty', 'Friendly', 'Cool', 'Empathetic', 'Assertive'];
 
 function InputPanel({ onGenerate, loading }) {
-  const [apiKey, setApiKey] = useState('');
   const [mode, setMode] = useState('text'); // 'text' | 'image' | 'camera'
   const [text, setText] = useState('');
   const [note, setNote] = useState('');
@@ -82,27 +81,12 @@ function InputPanel({ onGenerate, loading }) {
       return;
     }
 
-    onGenerate({ apiKey, mode, text, note, tone, imageDataUrl });
+    onGenerate({ mode, text, note, tone, imageDataUrl });
   };
 
   return (
     <section className="-mt-10 rounded-2xl border border-white/10 bg-zinc-900/60 p-4 backdrop-blur md:p-6">
       <div className="flex flex-col gap-4">
-        {/* API key */}
-        <div className="grid gap-2 md:grid-cols-[220px_1fr] md:items-center">
-          <label className="flex items-center gap-2 text-sm text-white/70">
-            <KeyRound className="h-4 w-4" />
-            OpenAI API Key
-          </label>
-          <input
-            type="password"
-            placeholder="sk-..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none ring-0 placeholder:text-white/30 focus:border-white/30"
-          />
-        </div>
-
         {/* Mode selector */}
         <div className="flex flex-wrap gap-2">
           <button
